@@ -106,7 +106,7 @@
                 }
             }
             cleanseAttributes(cleaner.documentElement);
-            
+
             var docElement = cleaner.documentElement.childNodes[1];
 
             if (docElement == null) {
@@ -122,7 +122,7 @@
                 get: propertyDescriptor.get,
                 set: function (value) {
                     var that = this;
-                    var nodes = cleanse(value);
+                    var nodes = cleanse(stripComments(value));
                     MSApp.execUnsafeLocalFunction(function () {
                         setter(propertyDescriptor, that, nodes);
                     });
@@ -131,6 +131,28 @@
                 configurable: propertyDescriptor.configurable,
             });
         }
+
+        function stripComments(value) {
+            var depth = 0;
+            return value.split(/(<\!--|-->)/)
+                .filter(filterElements)
+                .join('');
+
+            function filterElements(element) {
+                if (element === '<!--') {
+                    depth++;
+                    return false;
+                }
+                else if (element === '-->') {
+                    depth--;
+                    return false;
+                }
+                else {
+                    return (depth === 0);
+                }
+            }
+        }
+
         cleansePropertySetter("innerHTML", function (propertyDescriptor, target, elements) {
             empty(target);
             for (var i = 0, len = elements.length; i < len; i++) {
